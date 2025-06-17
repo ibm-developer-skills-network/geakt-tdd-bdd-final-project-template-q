@@ -1,6 +1,5 @@
-const { faker } = require('@faker-js/faker');
 const { Product, Category } = require('../../src/models/product');
-const { ProductFactory } = require('../factories'); // Keep for other tests
+const { ProductFactory } = require('../factories');
 
 describe('Product Model', () => {
 
@@ -114,21 +113,8 @@ describe('Product Model', () => {
     const productsAfterInitialClean = await Product.findAll();
     console.log('[DELETE TEST] After initial clean, products count:', productsAfterInitialClean.length, JSON.stringify(productsAfterInitialClean));
 
-    // const { id, ...dataToCreate } = ProductFactory.build(); // Bypassing factory for this test
-    const dataToCreate = {
-      name: faker.helpers.arrayElement([
-        "Hat", "Pants", "Shirt", "Apple", "Banana", 
-        "Pots", "Towels", "Ford", "Chevy", "Hammer", "Wrench"
-      ]),
-      description: faker.lorem.paragraph(),
-      price: parseFloat(faker.commerce.price({ min: 0.5, max: 2000.0, dec: 2 })),
-      available: faker.datatype.boolean(),
-      category: faker.helpers.arrayElement([
-        Category.UNKNOWN, Category.CLOTHS, Category.FOOD,
-        Category.HOUSEWARES, Category.AUTOMOTIVE, Category.TOOLS
-      ])
-    };
-    console.log('[DELETE TEST] Manually created data to create:', JSON.stringify(dataToCreate));
+    const { id, ...dataToCreate } = ProductFactory.build();
+    console.log('[DELETE TEST] Data to create (from factory):', JSON.stringify(dataToCreate));
     // delete productData.id; // Replaced by destructuring above
     
     const savedProduct = await Product.create(dataToCreate);
