@@ -23,8 +23,8 @@ async function initializeDatabase() {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
     
-    // Sync all models
-    await sequelize.sync({ force: false });
+    // Sync all models. Force true in test env to recreate tables.
+    await sequelize.sync({ force: process.env.NODE_ENV === 'test' });
     console.log('All models were synchronized successfully.');
     
     return sequelize;

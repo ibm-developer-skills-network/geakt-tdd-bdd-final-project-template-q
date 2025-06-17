@@ -9,37 +9,6 @@ install: ## Install Node.js dependencies
 	$(info Installing dependencies...)
 	npm install
 
-test: ## Run the unit tests with coverage
-	$(info Running tests...)
-	npm test
-
-test-watch: ## Run tests in watch mode
-	$(info Running tests in watch mode...)
-	npm run test:watch
-
-bdd: ## Run BDD tests
-	$(info Running BDD tests...)
-	npm run bdd
-
-lint: ## Run the linter
-	$(info Running linting...)
-	npm run lint
-
-lint-fix: ## Run the linter and fix issues
-	$(info Running linting with auto-fix...)
-	npm run lint:fix
-
-start: ## Start the production server
-	$(info Starting production server...)
-	npm start
-
-dev: ## Start the development server
-	$(info Starting development server...)
-	npm run dev
-
-build: ## Build a Docker image
-	$(info Building Docker image...)
-	docker build --rm --pull --tag products-js:1.0 . 
 
 db-start: ## Start PostgreSQL in Docker
 	$(info Starting PostgreSQL...)
@@ -49,22 +18,4 @@ db-start: ## Start PostgreSQL in Docker
 		-v postgres_data:/var/lib/postgresql/data \
 		postgres:13-alpine
 
-db-stop: ## Stop and remove PostgreSQL in Docker
-	$(info Stopping and removing PostgreSQL...)
-	-docker stop postgres
-	-docker rm postgres
 
-db-migrate: ## Run database migrations
-	$(info Running database migrations...)
-	npm run db:migrate
-
-db-reset: ## Reset database
-	$(info Resetting database...)
-	npm run db:reset
-
-clean: ## Clean node_modules and logs
-	$(info Cleaning up...)
-	rm -rf node_modules
-	rm -rf coverage
-	rm -rf reports
-	rm -f *.log
