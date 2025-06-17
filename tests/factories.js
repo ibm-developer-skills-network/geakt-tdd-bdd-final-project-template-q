@@ -4,13 +4,13 @@ const { Product, Category } = require('../src/models/product');
 class ProductFactory {
   static build(overrides = {}) {
     const product = {
-      id: faker.datatype.number({ min: 1, max: 1000 }),
+      id: faker.number.int({ min: 1, max: 1000 }),
       name: faker.helpers.arrayElement([
         "Hat", "Pants", "Shirt", "Apple", "Banana", 
         "Pots", "Towels", "Ford", "Chevy", "Hammer", "Wrench"
       ]),
       description: faker.lorem.paragraph(),
-      price: parseFloat(faker.commerce.price(0.5, 2000.0, 2)),
+      price: parseFloat(faker.commerce.price({ min: 0.5, max: 2000.0, dec: 2 })),
       available: faker.datatype.boolean(),
       category: faker.helpers.arrayElement([
         Category.UNKNOWN, Category.CLOTHS, Category.FOOD,

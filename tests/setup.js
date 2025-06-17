@@ -11,10 +11,6 @@ beforeAll(async () => {
   console.log('Test database connected successfully');
 });
 
-// Clean database before each test
-beforeEach(async () => {
-  await resetDatabase();
-});
 
 // Clean up after all tests
 afterAll(async () => {

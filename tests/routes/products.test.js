@@ -116,7 +116,7 @@ describe('Product Routes', () => {
       await request(app)
         .post(BASE_URL)
         .set('Content-Type', 'text/plain')
-        .send({})
+        .send('some plain text data')
         .expect(415);
     });
   });

@@ -1,6 +1,6 @@
 const express = require('express');
 const { Product, Category } = require('../models/product');
-const { validateProduct } = require('../middleware/validation');
+const { validateProduct, checkContentType } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.get('/health', (req, res) => {
 /**
  * CREATE A NEW PRODUCT
  */
-router.post('/', validateProduct, async (req, res) => {
+router.post('/', checkContentType('application/json'), validateProduct, async (req, res) => {
   try {
     console.log('Request to Create a Product...');
     console.log('Processing:', req.body);

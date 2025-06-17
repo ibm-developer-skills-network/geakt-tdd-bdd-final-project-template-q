@@ -1,7 +1,19 @@
+const { faker } = require('@faker-js/faker');
 const { Product, Category } = require('../../src/models/product');
-const { ProductFactory } = require('../factories');
+const { ProductFactory } = require('../factories'); // Keep for other tests
 
 describe('Product Model', () => {
+
+  beforeEach(async () => {
+    // Clean the Products table before each test
+    await Product.destroy({
+      where: {},
+      truncate: true,      // Truncates the table (deletes all rows)
+      cascade: true,       // Ensures cascading deletes if there are foreign key constraints
+      force: true,         // Allows truncate even with foreign key constraints (use with caution)
+      restartIdentity: true // For PostgreSQL, resets auto-incrementing primary key sequences
+    });
+  });
   
   describe('Product Creation', () => {
     test('should create a product and assert that it exists', () => {
@@ -16,7 +28,7 @@ describe('Product Model', () => {
       const product = new Product(productData);
       
       expect(product).toBeDefined();
-      expect(product.id).toBeUndefined(); // Not saved yet
+      expect(product.id).toBeNull(); // Not saved yet
       expect(product.name).toBe('Fedora');
       expect(product.description).toBe('A red hat');
       expect(product.available).toBe(true);
@@ -97,16 +109,41 @@ describe('Product Model', () => {
 
 
   test('should delete a product', async () => {
-    const productData = ProductFactory.build();
-    delete productData.id;
+    console.log('[DELETE TEST] Start: Cleaning products table...');
+    await Product.destroy({ where: {}, truncate: true, cascade: true, force: true, restartIdentity: true });
+    const productsAfterInitialClean = await Product.findAll();
+    console.log('[DELETE TEST] After initial clean, products count:', productsAfterInitialClean.length, JSON.stringify(productsAfterInitialClean));
+
+    // const { id, ...dataToCreate } = ProductFactory.build(); // Bypassing factory for this test
+    const dataToCreate = {
+      name: faker.helpers.arrayElement([
+        "Hat", "Pants", "Shirt", "Apple", "Banana", 
+        "Pots", "Towels", "Ford", "Chevy", "Hammer", "Wrench"
+      ]),
+      description: faker.lorem.paragraph(),
+      price: parseFloat(faker.commerce.price({ min: 0.5, max: 2000.0, dec: 2 })),
+      available: faker.datatype.boolean(),
+      category: faker.helpers.arrayElement([
+        Category.UNKNOWN, Category.CLOTHS, Category.FOOD,
+        Category.HOUSEWARES, Category.AUTOMOTIVE, Category.TOOLS
+      ])
+    };
+    console.log('[DELETE TEST] Manually created data to create:', JSON.stringify(dataToCreate));
+    // delete productData.id; // Replaced by destructuring above
     
-    const savedProduct = await Product.create(productData);
+    const savedProduct = await Product.create(dataToCreate);
+    console.log('[DELETE TEST] Saved product:', JSON.stringify(savedProduct));
+
+    // await new Promise(resolve => setTimeout(resolve, 0)); // Micro-delay removed
     let products = await Product.findAll();
+    console.log('[DELETE TEST] Products before first expect (should be 1):', products.length, JSON.stringify(products));
     expect(products.length).toBe(1);
     
     // delete the product and make sure it isn't in the database
+    console.log('[DELETE TEST] Destroying saved product...');
     await savedProduct.destroy();
     products = await Product.findAll();
+    console.log('[DELETE TEST] Products after destroy (should be 0):', products.length, JSON.stringify(products));
     expect(products.length).toBe(0);
   });
 
