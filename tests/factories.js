@@ -32,12 +32,9 @@ class ProductFactory {
   }
   
   static async createList(count, overrides = {}) {
-    const products = [];
-    for (let i = 0; i < count; i++) {
-      const product = await this.create(overrides);
-      products.push(product);
-    }
-    return products;
+    const productList = this.buildList(count, overrides);
+    productList.forEach(p => delete p.id);
+    return await Product.bulkCreate(productList);
   }
 }
 

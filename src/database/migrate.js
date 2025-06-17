@@ -6,9 +6,9 @@ const { initializeDatabase, closeDatabase } = require('./connection');
  */
 async function runMigrations() {
   try {
-    console.log('Running database migrations...');
+
     await initializeDatabase();
-    console.log('Migrations completed successfully!');
+
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);

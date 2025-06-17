@@ -1,4 +1,5 @@
-const { sequelize, resetDatabase } = require('../src/database/connection');
+const { initializeDatabase, closeDatabase, sequelize } = require('../src/database/connection');
+const { Product } = require('../src/models/product');
 
 // Set test environment
 process.env.NODE_ENV = 'test';
@@ -7,15 +8,18 @@ process.env.DATABASE_URL = process.env.DATABASE_URL ||
 
 // Global test setup
 beforeAll(async () => {
-  await sequelize.authenticate();
-  console.log('Test database connected successfully');
+  await initializeDatabase();
+});
+
+beforeEach(async () => {
+  await Product.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
 });
 
 
 // Clean up after all tests
 afterAll(async () => {
   await sequelize.close();
-  console.log('Test database connection closed');
+
 });
 
 // Global test timeout

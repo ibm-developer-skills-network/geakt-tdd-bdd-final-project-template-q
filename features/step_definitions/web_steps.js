@@ -64,7 +64,7 @@ When('I copy the {string} field', async function (elementName) {
   await this.driver.wait(until.elementLocated(By.id(elementId)), this.parameters.waitTimeout);
   const element = await this.driver.findElement(By.id(elementId));
   this.clipboard = await element.getAttribute('value');
-  console.log('Clipboard contains:', this.clipboard);
+
 });
 
 When('I paste the {string} field', async function (elementName) {

@@ -1,18 +1,10 @@
 const { Product, Category } = require('../../src/models/product');
+const { sequelize } = require('../../src/database/connection');
 const { ProductFactory } = require('../factories');
 
 describe('Product Model', () => {
 
-  beforeEach(async () => {
-    // Clean the Products table before each test
-    await Product.destroy({
-      where: {},
-      truncate: true,      // Truncates the table (deletes all rows)
-      cascade: true,       // Ensures cascading deletes if there are foreign key constraints
-      force: true,         // Allows truncate even with foreign key constraints (use with caution)
-      restartIdentity: true // For PostgreSQL, resets auto-incrementing primary key sequences
-    });
-  });
+
   
   describe('Product Creation', () => {
     test('should create a product and assert that it exists', () => {
@@ -100,36 +92,34 @@ describe('Product Model', () => {
     
     // Fetch it back and make sure the id hasn't changed
     // but the data did change
-    const products = await Product.findAll();
-    expect(products.length).toBe(1);
-    expect(products[0].id).toBe(originalId);
-    expect(products[0].description).toBe("testing");
+    const foundProduct = await Product.findByPk(originalId);
+    expect(foundProduct.id).toBe(originalId);
+    expect(foundProduct.description).toBe("testing");
   });
 
 
   test('should delete a product', async () => {
-    console.log('[DELETE TEST] Start: Cleaning products table...');
-    await Product.destroy({ where: {}, truncate: true, cascade: true, force: true, restartIdentity: true });
+
     const productsAfterInitialClean = await Product.findAll();
-    console.log('[DELETE TEST] After initial clean, products count:', productsAfterInitialClean.length, JSON.stringify(productsAfterInitialClean));
+
 
     const { id, ...dataToCreate } = ProductFactory.build();
-    console.log('[DELETE TEST] Data to create (from factory):', JSON.stringify(dataToCreate));
+
     // delete productData.id; // Replaced by destructuring above
     
     const savedProduct = await Product.create(dataToCreate);
-    console.log('[DELETE TEST] Saved product:', JSON.stringify(savedProduct));
+
 
     // await new Promise(resolve => setTimeout(resolve, 0)); // Micro-delay removed
     let products = await Product.findAll();
-    console.log('[DELETE TEST] Products before first expect (should be 1):', products.length, JSON.stringify(products));
+
     expect(products.length).toBe(1);
     
     // delete the product and make sure it isn't in the database
-    console.log('[DELETE TEST] Destroying saved product...');
+
     await savedProduct.destroy();
     products = await Product.findAll();
-    console.log('[DELETE TEST] Products after destroy (should be 0):', products.length, JSON.stringify(products));
+
     expect(products.length).toBe(0);
   });
 

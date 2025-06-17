@@ -6,6 +6,7 @@ const { ProductFactory } = require('../factories');
 const BASE_URL = '/api/products';
 
 describe('Product Routes', () => {
+
   
   /**
    * Utility function to bulk create products
@@ -14,13 +15,8 @@ describe('Product Routes', () => {
     const products = [];
     for (let i = 0; i < count; i++) {
       const productData = ProductFactory.build();
-      const response = await request(app)
-        .post(BASE_URL)
-        .send(productData)
-        .expect(201);
-      
-      productData.id = response.body.id;
-      products.push(productData);
+      const product = await Product.create(productData);
+      products.push(product);
     }
     return products;
   }
@@ -52,11 +48,13 @@ describe('Product Routes', () => {
       expect(response.body.message).toBe('OK');
     });
   });
+
+  
   
   describe('CREATE Product', () => {
     test('should create a new product', async () => {
       const testProduct = ProductFactory.build();
-      console.log('Test Product:', JSON.stringify(testProduct, null, 2));
+
       
       const response = await request(app)
         .post(BASE_URL)
@@ -74,28 +72,26 @@ describe('Product Routes', () => {
       expect(newProduct.available).toBe(testProduct.available);
       expect(newProduct.category).toBe(testProduct.category);
       
-      //
-      // Uncomment this code once READ is implemented
-      //
+      // Check that the location header was correct
+      const locationResponse = await request(app)
+        .get(response.headers.location)
+        .expect(200);
+        
+      const retrievedProduct = locationResponse.body;
+      expect(retrievedProduct.name).toBe(testProduct.name);
+      expect(retrievedProduct.description).toBe(testProduct.description);
+      expect(retrievedProduct.price).toBe(testProduct.price);
+      expect(retrievedProduct.available).toBe(testProduct.available);
+      expect(retrievedProduct.category).toBe(testProduct.category);
       
-      // // Check that the location header was correct
-      // const locationResponse = await request(app)
-      //   .get(response.headers.location)
-      //   .expect(200);
-      //   
-      // const retrievedProduct = locationResponse.body;
-      // expect(retrievedProduct.name).toBe(testProduct.name);
-      // expect(retrievedProduct.description).toBe(testProduct.description);
-      // expect(retrievedProduct.price).toBe(testProduct.price);
-      // expect(retrievedProduct.available).toBe(testProduct.available);
-      // expect(retrievedProduct.category).toBe(testProduct.category);
+      
     });
     
     test('should not create a product without a name', async () => {
       const productData = ProductFactory.build();
       delete productData.name;
       
-      console.log('Product no name:', JSON.stringify(productData, null, 2));
+
       
       const response = await request(app)
         .post(BASE_URL)
@@ -121,8 +117,147 @@ describe('Product Routes', () => {
     });
   });
   
-  //
-  // ADD YOUR TEST CASES HERE
-  //
+  describe('READ Product', () => {
+    test('should read a product by id', async () => {
+      const products = await createProducts(1);
+      const product = products[0];
+
+      const response = await request(app)
+        .get(`${BASE_URL}/${product.id}`)
+        .expect(200);
+
+      expect(response.body.name).toBe(product.name);
+    });
+
+    test('should return 404 when reading a non-existent product', async () => {
+      await request(app)
+        .get(`${BASE_URL}/99999`)
+        .expect(404);
+    });
+  });
+
+  describe('UPDATE Product', () => {
+    test('should update a product', async () => {
+      const products = await createProducts(1);
+      const productToUpdate = products[0];
+      const updatePayload = {
+        name: 'Updated Name',
+        description: 'Updated Description',
+        price: '123.45',
+        category: productToUpdate.category,
+        available: !productToUpdate.available
+      };
+
+      const response = await request(app)
+        .put(`${BASE_URL}/${productToUpdate.id}`)
+        .send(updatePayload)
+        .expect(200);
+
+      expect(response.body.id).toBe(productToUpdate.id);
+      expect(response.body.name).toBe(updatePayload.name);
+      expect(response.body.price).toBe(parseFloat(updatePayload.price));
+      expect(response.body.available).toBe(updatePayload.available);
+    });
+
+    test('should return 404 when updating a non-existent product', async () => {
+      const updatedData = ProductFactory.build();
+      await request(app)
+        .put(`${BASE_URL}/99999`)
+        .send(updatedData)
+        .expect(404);
+    });
+
+    test('should return 400 on validation error during update', async () => {
+      const products = await createProducts(1);
+      const product = products[0];
+      const invalidUpdateData = { name: '' }; // Invalid name
+
+      await request(app)
+        .put(`${BASE_URL}/${product.id}`)
+        .send(invalidUpdateData)
+        .expect(400);
+    });
+  });
+
+  describe('DELETE Product', () => {
+    test('should delete a product', async () => {
+      const products = await createProducts(1);
+      const product = products[0];
+
+      await request(app)
+        .delete(`${BASE_URL}/${product.id}`)
+        .expect(204);
+
+      // Verify it's gone
+      await request(app)
+        .get(`${BASE_URL}/${product.id}`)
+        .expect(404);
+    });
+
+    test('should return 404 when deleting a non-existent product', async () => {
+      await request(app)
+        .delete(`${BASE_URL}/99999`)
+        .expect(404);
+    });
+  });
+
+  describe('LIST Products', () => {
+    test('should list all products', async () => {
+      await createProducts(5);
+      const response = await request(app)
+        .get(BASE_URL)
+        .expect(200);
+      expect(response.body.length).toBe(5);
+    });
+
+    test('should filter products by name', async () => {
+      await createProducts(2);
+      const productData = ProductFactory.build({ name: 'My Special Laptop' });
+      await request(app).post(BASE_URL).send(productData).expect(201);
+      await createProducts(2);
+
+      const response = await request(app)
+        .get(`${BASE_URL}?name=Special%20Laptop`)
+        .expect(200);
+      expect(response.body.length).toBe(1);
+      expect(response.body[0].name).toBe('My Special Laptop');
+    });
+
+    test('should filter products by availability', async () => {
+      const availableProduct = ProductFactory.build({ available: true });
+      const unavailableProduct = ProductFactory.build({ available: false });
+      await request(app).post(BASE_URL).send(availableProduct).expect(201);
+      await request(app).post(BASE_URL).send(unavailableProduct).expect(201);
+
+      const response = await request(app)
+        .get(`${BASE_URL}?availability=false`)
+        .expect(200);
+
+      expect(response.body.length).toBe(1);
+      expect(response.body[0].available).toBe(false);
+    });
+
+    test('should filter products by category', async () => {
+      const defaultCategoryProduct = ProductFactory.build({ category: 'FOOD' });
+      const specialCategoryProduct = ProductFactory.build({ category: 'TOOLS' });
+      await request(app).post(BASE_URL).send(defaultCategoryProduct).expect(201);
+      await request(app).post(BASE_URL).send(specialCategoryProduct).expect(201);
+      
+      const response = await request(app)
+        .get(`${BASE_URL}?category=TOOLS`)
+        .expect(200);
+
+      expect(response.body.length).toBe(1);
+      expect(response.body[0].category).toBe('TOOLS');
+    });
+
+    test('should return empty array for non-existent category', async () => {
+        await createProducts(2);
+        const response = await request(app)
+          .get(`${BASE_URL}?category=NonExistentCategory`)
+          .expect(200);
+        expect(response.body.length).toBe(0);
+    });
+  });
   
 });
