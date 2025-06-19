@@ -1,5 +1,6 @@
 const express = require('express');
-const { Product, Category } = require('../models/product');
+const { Product, Category, sequelize } = require('../models/product');
+const { Op } = require('sequelize');
 const { validateProduct, checkContentType } = require('../middleware/validation');
 
 const router = express.Router();
@@ -16,11 +17,10 @@ router.get('/health', (req, res) => {
  */
 router.post('/', checkContentType('application/json'), validateProduct, async (req, res) => {
   try {
-    console.log('Request to Create a Product...');
-    console.log('Processing:', req.body);
+
     
     const product = await Product.create(req.body);
-    console.log('Product with new id [%s] saved!', product.id);
+
     
     const location = `/api/products/${product.id}`;
     res.status(201)
@@ -28,7 +28,7 @@ router.post('/', checkContentType('application/json'), validateProduct, async (r
        .json(product.serialize());
        
   } catch (error) {
-    console.error('Error creating product:', error);
+
     res.status(400).json({ 
       error: 'Bad Request', 
       message: error.message 
@@ -38,26 +38,81 @@ router.post('/', checkContentType('application/json'), validateProduct, async (r
 
 /**
  * LIST ALL PRODUCTS
- * 
- * PLACE YOUR CODE TO LIST ALL PRODUCTS HERE
  */
+router.get('/', async (req, res) => {
+  try {
+    const { category, availability, name } = req.query;
+    const where = {};
+    if (name) {
+      where.name = { [Op.iLike]: `%${name}%` };
+    }
+    if (availability) {
+      where.available = availability === 'true';
+    }
+    if (category) {
+      if (Object.values(Category).includes(category)) {
+        where.category = category;
+      } else {
+        // If the category does not exist, return an empty list
+        return res.status(200).json([]);
+      }
+    }
+    const products = await Product.findAll({ where });
+    res.status(200).json(products.map(p => p.serialize()));
+  } catch (error) {
+
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 /**
  * READ A PRODUCT
- * 
- * PLACE YOUR CODE HERE TO READ A PRODUCT
  */
+router.get('/:id', async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.id);
+    if (product) {
+      res.status(200).json(product.serialize());
+    } else {
+      res.status(404).json({ error: 'Not Found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 /**
  * UPDATE A PRODUCT
- * 
- * PLACE YOUR CODE TO UPDATE A PRODUCT HERE
  */
+router.put('/:id', checkContentType('application/json'), validateProduct, async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.id);
+    if (product) {
+      await product.update(req.body);
+      res.status(200).json(product.serialize());
+    } else {
+      res.status(404).json({ error: 'Not Found' });
+    }
+  } catch (error) {
+    res.status(400).json({ error: 'Bad Request', message: error.message });
+  }
+});
 
 /**
  * DELETE A PRODUCT
- * 
- * PLACE YOUR CODE TO DELETE A PRODUCT HERE
  */
+router.delete('/:id', async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.id);
+    if (product) {
+      await product.destroy();
+      res.status(204).send();
+    } else {
+      res.status(404).json({ error: 'Not Found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 module.exports = router;

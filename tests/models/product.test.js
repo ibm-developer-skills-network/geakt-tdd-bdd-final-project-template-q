@@ -1,18 +1,10 @@
 const { Product, Category } = require('../../src/models/product');
+const { sequelize } = require('../../src/database/connection');
 const { ProductFactory } = require('../factories');
 
 describe('Product Model', () => {
 
-  beforeEach(async () => {
-    // Clean the Products table before each test
-    await Product.destroy({
-      where: {},
-      truncate: true,      // Truncates the table (deletes all rows)
-      cascade: true,       // Ensures cascading deletes if there are foreign key constraints
-      force: true,         // Allows truncate even with foreign key constraints (use with caution)
-      restartIdentity: true // For PostgreSQL, resets auto-incrementing primary key sequences
-    });
-  });
+
   
   describe('Product Creation', () => {
     test('should create a product and assert that it exists', () => {
@@ -66,10 +58,135 @@ describe('Product Model', () => {
   // ADD YOUR TEST CASES HERE
   //
 
-  
+  describe('Product Model - Read', () => {
+    test('should read a product', async () => {
+        const productData = ProductFactory.build();
+        delete productData.id;
+        
+        const savedProduct = await Product.create(productData);
+        expect(savedProduct.id).toBeDefined();
+        
+        // Fetch it back
+        const foundProduct = await Product.findByPk(savedProduct.id);
+        expect(foundProduct.id).toBe(savedProduct.id);
+        expect(foundProduct.name).toBe(productData.name);
+        expect(foundProduct.description).toBe(productData.description);
+        expect(parseFloat(foundProduct.price)).toBe(productData.price);
+      });
+  });
 
-  
+  test('should update a product', async () => {
+    const productData = ProductFactory.build();
+    delete productData.id;
+    
+    const savedProduct = await Product.create(productData);
+    expect(savedProduct.id).toBeDefined();
+    
+    // Change it and save it
+    savedProduct.description = "testing";
+    const originalId = savedProduct.id;
+    await savedProduct.save();
+    
+    expect(savedProduct.id).toBe(originalId);
+    expect(savedProduct.description).toBe("testing");
+    
+    // Fetch it back and make sure the id hasn't changed
+    // but the data did change
+    const foundProduct = await Product.findByPk(originalId);
+    expect(foundProduct.id).toBe(originalId);
+    expect(foundProduct.description).toBe("testing");
+  });
 
-  
+  test('should find products by price using the custom findByPrice method', async () => {
+    await Product.create(ProductFactory.build({ price: 10.99 }));
+    await Product.create(ProductFactory.build({ price: 10.99 }));
+    await Product.create(ProductFactory.build({ price: 20.00 }));
+
+    const foundProducts = await Product.findByPrice(10.99);
+    expect(foundProducts).toHaveLength(2);
+    expect(foundProducts[0].price).toBe('10.99');
+    expect(foundProducts[1].price).toBe('10.99');
+  });
+
+
+  test('should delete a product', async () => {
+
+    const productsAfterInitialClean = await Product.findAll();
+
+
+    const { id, ...dataToCreate } = ProductFactory.build();
+
+    // delete productData.id; // Replaced by destructuring above
+    
+    const savedProduct = await Product.create(dataToCreate);
+
+
+    // await new Promise(resolve => setTimeout(resolve, 0)); // Micro-delay removed
+    let products = await Product.findAll();
+
+    expect(products.length).toBe(1);
+    
+    // delete the product and make sure it isn't in the database
+
+    await savedProduct.destroy();
+    products = await Product.findAll();
+
+    expect(products.length).toBe(0);
+  });
+
+  test('should list all products in the database', async () => {
+    let products = await Product.findAll();
+    expect(products.length).toBe(0);
+    
+    // Create 5 Products
+    for (let i = 0; i < 5; i++) {
+      const productData = ProductFactory.build();
+      delete productData.id;
+      await Product.create(productData);
+    }
+    
+    // See if we get back 5 products
+    products = await Product.findAll();
+    expect(products.length).toBe(5);
+  });
+
+  test('should find a product by name', async () => {
+    const products = await ProductFactory.createList(5);
+    const name = products[0].name;
+    const count = products.filter(product => product.name === name).length;
+    
+    const found = await Product.findByName(name);
+    expect(found.length).toBe(count);
+    
+    for (const product of found) {
+      expect(product.name).toBe(name);
+    }
+  });
+
+  test('should find products by availability', async () => {
+    const products = await ProductFactory.createList(10);
+    const available = products[0].available;
+    const count = products.filter(product => product.available === available).length;
+    
+    const found = await Product.findByAvailability(available);
+    expect(found.length).toBe(count);
+    
+    for (const product of found) {
+      expect(product.available).toBe(available);
+    }
+  });
+
+  test('should find products by category', async () => {
+    const products = await ProductFactory.createList(10);
+    const category = products[0].category;
+    const count = products.filter(product => product.category === category).length;
+    
+    const found = await Product.findByCategory(category);
+    expect(found.length).toBe(count);
+    
+    for (const product of found) {
+      expect(product.category).toBe(category);
+    }
+  });
   
 });

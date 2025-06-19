@@ -60,10 +60,7 @@ async function startServer() {
     await initializeDatabase();
     
     const server = app.listen(PORT, () => {
-      console.log('*'.repeat(70));
-      console.log('  P R O D U C T   S E R V I C E   R U N N I N G  '.padStart(45));
-      console.log('*'.repeat(70));
-      console.log(`Server is running on port ${PORT}`);
+
     });
     
     return server;

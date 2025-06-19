@@ -1,6 +1,9 @@
 module.exports = {
     default: {
-      require: ['features/step_definitions/**/*.js'],
+      require: [
+        'features/support/**/*.js',
+        'features/step_definitions/**/*.js'
+    ],
       format: ['progress-bar', 'json:reports/cucumber_report.json'],
       paths: ['features/*.feature'],
       requireModule: ['@babel/register'],

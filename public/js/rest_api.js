@@ -23,7 +23,7 @@ $(function () {
         $("#product_name").val("");
         $("#product_description").val("");
         $("#product_available").val("");
-        $("#product_category").val("");
+        $("#product_category").val("UNKNOWN");
         $("#product_price").val("");
     }
 
@@ -188,7 +188,7 @@ $(function () {
 
         let name = $("#product_name").val();
         let description = $("#product_description").val();
-        let available = $("#product_available").val() == "true";
+        let available = $("#product_available").val();
         let category = $("#product_category").val();
 
         let queryString = ""
@@ -206,9 +206,9 @@ $(function () {
             if (queryString.length > 0) {
                 queryString += '&'
             }
-            queryString += 'available=' + available
+            queryString += 'availability=' + available
         }
-        if (category) {
+        if (category && category != "UNKNOWN") {
             if (queryString.length > 0) {
                 queryString += '&'
             }
