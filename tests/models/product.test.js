@@ -97,6 +97,17 @@ describe('Product Model', () => {
     expect(foundProduct.description).toBe("testing");
   });
 
+  test('should find products by price using the custom findByPrice method', async () => {
+    await Product.create(ProductFactory.build({ price: 10.99 }));
+    await Product.create(ProductFactory.build({ price: 10.99 }));
+    await Product.create(ProductFactory.build({ price: 20.00 }));
+
+    const foundProducts = await Product.findByPrice(10.99);
+    expect(foundProducts).toHaveLength(2);
+    expect(foundProducts[0].price).toBe('10.99');
+    expect(foundProducts[1].price).toBe('10.99');
+  });
+
 
   test('should delete a product', async () => {
 

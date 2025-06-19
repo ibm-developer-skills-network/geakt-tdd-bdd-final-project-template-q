@@ -13,13 +13,6 @@ router.get('/health', (req, res) => {
 });
 
 /**
- * Health check endpoint
- */
-router.get('/health', (req, res) => {
-  res.status(200).json({ status: 200, message: 'OK' });
-});
-
-/**
  * CREATE A NEW PRODUCT
  */
 router.post('/', checkContentType('application/json'), validateProduct, async (req, res) => {
@@ -35,7 +28,7 @@ router.post('/', checkContentType('application/json'), validateProduct, async (r
        .json(product.serialize());
        
   } catch (error) {
-    console.error('Error creating product:', error);
+
     res.status(400).json({ 
       error: 'Bad Request', 
       message: error.message 
@@ -53,7 +46,7 @@ router.get('/', async (req, res) => {
     if (name) {
       where.name = { [Op.iLike]: `%${name}%` };
     }
-    if (availability !== undefined) {
+    if (availability) {
       where.available = availability === 'true';
     }
     if (category) {
@@ -67,7 +60,7 @@ router.get('/', async (req, res) => {
     const products = await Product.findAll({ where });
     res.status(200).json(products.map(p => p.serialize()));
   } catch (error) {
-    console.error('Error listing products:', error);
+
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });

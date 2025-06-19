@@ -59,8 +59,7 @@ else
     echo "*** Docker not available, please ensure PostgreSQL is running on localhost:5432"
 fi
 
-echo "*** Running database migrations..."
-npm run db:migrate
+
 
 echo "**************************************************"
 echo " TDD/BDD Final Project Environment Setup Complete"

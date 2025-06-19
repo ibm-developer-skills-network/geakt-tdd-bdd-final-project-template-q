@@ -2,7 +2,6 @@ const request = require('supertest');
 const app = require('../../src/app');
 const { Product } = require('../../src/models/product');
 const { ProductFactory } = require('../factories');
-
 const BASE_URL = '/api/products';
 
 describe('Product Routes', () => {
@@ -115,6 +114,17 @@ describe('Product Routes', () => {
         .send('some plain text data')
         .expect(415);
     });
+
+    test('should proceed if content type is correct but has extra parameters', async () => {
+      const productData = ProductFactory.build();
+      const response = await request(app)
+        .post(BASE_URL)
+        .set('Content-Type', 'application/json; charset=utf-8')
+        .send(productData);
+
+      // We expect a 201, not a 415, because the base type is correct.
+      expect(response.status).toBe(201);
+    });
   });
   
   describe('READ Product', () => {
@@ -129,7 +139,7 @@ describe('Product Routes', () => {
       expect(response.body.name).toBe(product.name);
     });
 
-    test('should return 404 when reading a non-existent product', async () => {
+    test('should not get a product that is not found', async () => {
       await request(app)
         .get(`${BASE_URL}/99999`)
         .expect(404);
@@ -259,5 +269,70 @@ describe('Product Routes', () => {
         expect(response.body.length).toBe(0);
     });
   });
-  
+
+  describe('Route Error Handling', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    test('LIST should return 500 if database fails', async () => {
+      const errorMessage = 'Database error';
+      jest.spyOn(Product, 'findAll').mockRejectedValue(new Error(errorMessage));
+      
+      const response = await request(app).get(BASE_URL);
+      
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal Server Error');
+    });
+
+    test('READ should return 500 if database fails', async () => {
+      const errorMessage = 'Database error';
+      jest.spyOn(Product, 'findByPk').mockRejectedValue(new Error(errorMessage));
+      
+      const response = await request(app).get(`${BASE_URL}/1`);
+      
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal Server Error');
+    });
+
+    test('UPDATE should return 400 if update fails', async () => {
+      const errorMessage = 'Update failed';
+      const mockProduct = { update: jest.fn().mockRejectedValue(new Error(errorMessage)) };
+      jest.spyOn(Product, 'findByPk').mockResolvedValue(mockProduct);
+
+      const response = await request(app)
+        .put(`${BASE_URL}/1`)
+        .set('Content-Type', 'application/json')
+        .send(ProductFactory.build());
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Bad Request');
+      expect(response.body.message).toBe(errorMessage);
+    });
+
+    test('DELETE should return 500 if database fails', async () => {
+      const errorMessage = 'Delete failed';
+      const mockProduct = { destroy: jest.fn().mockRejectedValue(new Error(errorMessage)) };
+      jest.spyOn(Product, 'findByPk').mockResolvedValue(mockProduct);
+
+      const response = await request(app).delete(`${BASE_URL}/1`);
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal Server Error');
+    });
+
+    test('CREATE should return 400 if database fails', async () => {
+      const errorMessage = 'Create failed';
+      jest.spyOn(Product, 'create').mockRejectedValue(new Error(errorMessage));
+
+      const response = await request(app)
+        .post(BASE_URL)
+        .set('Content-Type', 'application/json')
+        .send(ProductFactory.build());
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Bad Request');
+      expect(response.body.message).toBe(errorMessage);
+    });
+  });
 });
