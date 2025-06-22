@@ -25,7 +25,17 @@ sudo npm install -g nodemon
 
 echo "*** Installing Selenium and Firefox for BDD"
 sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y sqlite3 ca-certificates firefox
+# Install Firefox and other dependencies
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y sqlite3 ca-certificates firefox-esr curl
+
+# Install geckodriver (Firefox WebDriver)
+echo "*** Installing geckodriver..."
+# Get the latest version of geckodriver
+GECKODRIVER_VERSION=$(curl -s "https://api.github.com/repos/mozilla/geckodriver/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+# Download and install geckodriver
+wget -q "https://github.com/mozilla/geckodriver/releases/download/$GECKODRIVER_VERSION/geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz" -O /tmp/geckodriver.tar.gz
+sudo tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin
+rm /tmp/geckodriver.tar.gz
 
 echo "*** Establishing .env file"
 cp .env.example .env
