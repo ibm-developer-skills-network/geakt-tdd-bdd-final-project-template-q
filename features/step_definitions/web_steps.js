@@ -1,5 +1,6 @@
 const { When, Then, BeforeAll, AfterAll, setDefaultTimeout } = require('@cucumber/cucumber');
 const { Builder, By, Key, until, Select } = require('selenium-webdriver');
+const firefox = require('selenium-webdriver/firefox');
 const assert = require('assert');
 
 const BASE_URL = 'http://localhost:8080';
@@ -10,7 +11,13 @@ let driver;
 setDefaultTimeout(60 * 1000);
 
 BeforeAll(async function () {
-  driver = await new Builder().forBrowser('chrome').build();
+  const options = new firefox.Options();
+  options.addArguments('-headless');
+
+  driver = await new Builder()
+    .forBrowser('firefox')
+    .setFirefoxOptions(options)
+    .build();
 });
 
 AfterAll(async function () {
@@ -24,6 +31,8 @@ async function getField(fieldName) {
   const elementId = 'product_' + fieldName.toLowerCase().replace(/ /g, '_');
   return driver.findElement(By.id(elementId));
 }
+
+
 
 // Helper function to get a button by its ID
 async function getButton(buttonText) {
@@ -98,4 +107,6 @@ When('I change {string} to {string}', async function (fieldName, newValue) {
   await field.clear();
   await field.sendKeys(newValue);
 });
+
+
 

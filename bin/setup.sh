@@ -23,15 +23,9 @@ npm install
 echo "*** Installing global development tools..."
 sudo npm install -g nodemon
 
-echo "*** Installing Selenium and Chrome for BDD"
+echo "*** Installing Selenium and Firefox for BDD"
 sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y sqlite3 ca-certificates chromium-driver
-
-# Install Chrome browser
-wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-sudo apt-get update
-sudo apt-get install -y google-chrome-stable
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y sqlite3 ca-certificates firefox
 
 echo "*** Establishing .env file"
 cp .env.example .env
